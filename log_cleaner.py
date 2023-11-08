@@ -17,6 +17,7 @@ for log_directory in config_params['log_directories']:
         os.mkdir(archive_dir);
     # Get all archived files for current log directory
     archived_files = [];
+    files_date = [];
     os.chdir(log_directory);
     for file_name in os.listdir('.'):
         file_path = os.path.join(os.getcwd(), file_name);
@@ -24,6 +25,9 @@ for log_directory in config_params['log_directories']:
             file_time = round(os.stat(file_path).st_mtime);
             # If file is past archiving window
             if file_time < (current_time - archiving_window):
+                file_date = datetime.fromtimestamp(file_time).date()
+                if file_date not in files_date:
+                    files_date.append(file_date)
                 archived_files.append(os.path.join('./', file_path));
     # Get all deleted archives for current log directory
     deleted_files = [];
@@ -41,14 +45,19 @@ for log_directory in config_params['log_directories']:
         print(" Found " + str(len(archived_files)) + " log file(s) ready for archiving");
         print(" ------------------------------------------------------------------------")
         fail_counter = 0;
-        archive_file_path = os.path.join(archive_dir, datetime.now().strftime('%d%m%Y%H%M') + '.zip');
-        with zipfile.ZipFile(archive_file_path, 'w') as archive:
-            for archived_file in archived_files:
-                try:
-                    archive.write(archived_file);
-                    os.remove(archived_file);
-                except:
-                    fail_counter += 1;
+        for file_date in files_date:
+            archive_file_path = os.path.join(archive_dir, file_date.strftime('%d%m%Y') + '.zip');
+            with zipfile.ZipFile(archive_file_path, 'w') as archive:
+                for archived_file in archived_files:
+                    if os.path.isfile(archived_file):
+                        archived_file_time = round(os.stat(archived_file).st_mtime);
+                        archived_file_date = datetime.fromtimestamp(archived_file_time).date()
+                        if archived_file_date == file_date:
+                            try:
+                                archive.write(archived_file);
+                                os.remove(archived_file);
+                            except:
+                                fail_counter += 1;
         print(" Archiving status: succeeded: " + str(len(archived_files) - fail_counter) + ", failures: " + str(fail_counter) + ", total: " + str(len(archived_files)));
         print("========================================================================")
     else:
