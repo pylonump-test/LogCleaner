@@ -34,7 +34,7 @@ for archive_file in os.listdir('.'):
 
 # Archiving Process
 if archived_files:
-    print(f"\nFound {len(archived_files)} log file(s) ready for archiving ...");
+    print("\nFound " + str(len(archived_files)) + " log file(s) ready for archiving ...");
     print("------------------------------------------------------------------------")
     fail_counter = 0;
     archive_file_path = os.path.join(archive_dir, datetime.now().strftime('%d%m%Y%H%M') + '.zip');
@@ -45,18 +45,18 @@ if archived_files:
                 os.remove(archived_file);
             except:
                 fail_counter += 1;
-                print(f" --- Error: failed to archive log file \"{archived_file}\"");
+                print(" --- Error: failed to archive log file \"" + str(archived_file) + "\"");
             else:
-                print(f" {archived_file}: Archived");
+                print(" " + str(archived_file) + ": Archived");
     print("\n========================================================================")
-    print(f"Archiving status: succeeded: {len(archived_files) - fail_counter}, failures: {fail_counter}, total: {len(archived_files)}");
+    print("Archiving status: succeeded: " + str(len(archived_files) - fail_counter) + ", failures: " + str(fail_counter) + ", total: " + str(len(archived_files)));
     print("========================================================================\n")
 else:
     print("No log files were found for archiving process!");
 
 # Deletion Process
 if deleted_files:
-    print(f"\nFound {len(deleted_files)} archive(s) ready for deletion ...");
+    print("\nFound " + str(len(deleted_files)) + " archive(s) ready for deletion ...");
     print("------------------------------------------------------------------------")
     fail_counter = 0;
     for deleted_file in deleted_files:
@@ -64,11 +64,11 @@ if deleted_files:
             os.remove(deleted_file);
         except:
             fail_counter += 1;
-            print(f" --- Error: failed to delete archive \"{deleted_file}\"");
+            print(" --- Error: failed to delete archive \"" + str(deleted_file) + "\"");
         else:
-            print(f" {deleted_file}: Deleted");
+            print(" " + str(deleted_file) + ": Deleted");
     print("\n========================================================================")
-    print(f"Deletion status: succeeded: {len(deleted_files) - fail_counter}, failures: {fail_counter}, total: {len(deleted_files)}");
+    print("Deletion status: succeeded: " + str(len(deleted_files) - fail_counter) + ", failures: " + str(fail_counter) + ", total: " + str(len(deleted_files)));
     print("========================================================================\n")
 else:
     print("No expired archives were found for deletion process!");
