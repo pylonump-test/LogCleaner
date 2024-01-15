@@ -73,11 +73,12 @@ if __name__ == "__main__":
     current_time = time.time();
     archiving_window = config_params['archiving_window'] * 86400;           # 7 Days
     deletion_window = config_params['deletion_window'] * 86400;             # 21 Days
+    archives_dir = config_params['archives_dir']
 
     print("\nlog-cleaner running ...")
     for log_dir in config_params['log_directories']:
         print("\nCurrent working directory: " + str(log_dir))
-        archive_dir = os.path.join(log_dir, 'archives');
+        archive_dir = os.path.join(archives_dir, os.path.basename(log_dir));
         if not os.path.exists(archive_dir):
             os.mkdir(archive_dir);
         # Prepare files data
