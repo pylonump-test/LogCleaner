@@ -7,12 +7,14 @@ with open('config.json', 'r') as config_file:
 current_time = time.time();
 archiving_window = config_params['archiving_window'] * 86400;           # 7 Days
 deletion_window = config_params['deletion_window'] * 86400;             # 21 Days
+archives_dir = config_params['archives_dir']
 
 print("\nlog-cleaner running ...")
 for log_directory in config_params['log_directories']:
     print("\nCurrent working directory: " + str(log_directory))
     # Define archive directory for current log directory
-    archive_dir = os.path.join(log_directory, 'archives');
+    current_dir = os.path.basename(log_directory)
+    archive_dir = os.path.join(archives_dir, current_dir);
     if not os.path.exists(archive_dir):
         os.mkdir(archive_dir);
     # Get all archived files for current log directory

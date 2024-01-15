@@ -1,7 +1,7 @@
 {
   "archiving_window": 7,
   "deletion_window": 21,
-  "logs_directory": "/etc/ElsewedyIntel/MDAS/logs",
+  "archives_dir": "/home/admin/log_archives",
   "log_directories": [
     "/etc/ElsewedyIntel/MDAS/logs/DLT645GPRS",
     "/etc/ElsewedyIntel/MDAS/logs/DLT645GPRSRES",
