@@ -1,13 +1,10 @@
 {
-  "archiving_window": 7,
-  "deletion_window": 21,
-  "archives_dir": "/home/admin/log_archives",
-  "log_directories": [
-    "/etc/ElsewedyIntel/MDAS/logs/DLT645",
-    "/etc/ElsewedyIntel/MDAS/logs/DLT645GPRS",
-    "/etc/ElsewedyIntel/MDAS/logs/DLT645GPRSRES",
-    "/etc/ElsewedyIntel/MDAS/logs/DLT645_SERVER",
-    "/etc/ElsewedyIntel/MDAS/logs/GPRS",
-    "/etc/ElsewedyIntel/MDAS/logs/PLCDLMSE"
+  "working_dir": "/home/admin/repos/log-cleaner",
+  "archiving_interval": 7,
+  "deletion_interval": 21,
+  "archives_dir": "/home/admin/repos/log-cleaner/log-archives",
+  "log_dirs": [
+    "/home/admin/repos/log-cleaner/log-dir",
+    "/home/admin/repos/log-cleaner/new-log-dir"
   ]
 }
