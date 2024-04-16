@@ -50,30 +50,30 @@ def archive_files(archived_files, log_dir, archive_dir):
 
             # Format the zip file name with the date
             file_date = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%d%m%Y')
-            zip_file_path = os.path.join(archive_subdir, f"{file_date}.zip")
+            zip_file_path = os.path.join(archive_subdir, file_date + ".zip")
 
             # Write the file to the zip, preserving the directory structure
             with zipfile.ZipFile(zip_file_path, 'a', zipfile.ZIP_DEFLATED) as archive:
                 archive.write(file_path, relative_path)
                 os.remove(file_path)
         except Exception as e:
-            print(f"Error archiving file {file_path}: {e}")
+            print("Error archiving file " + file_path + ":" + e)
             fail_counter += 1
 
     print(" Archiving status: succeeded: " + str(len(archived_files) - fail_counter) + ", failures: " + str(fail_counter) + ", total: " + str(len(archived_files)));
     print("========================================================================")
 
 def delete_files(deleted_files):
-    print(f" Found  {len(deleted_files)}  archive(s) ready for deletion")
+    print(" Found " + str(len(deleted_files)) + "archive(s) ready for deletion")
     print(" ------------------------------------------------------------------------")
     fail_counter = 0
     for deleted_file in deleted_files:
         try:
             os.remove(deleted_file);
         except Exception as e:
-            print(f"Error deleting file {deleted_file}: {e}")
+            print("Error deleting file " + deleted_file + ":" + e)
             fail_counter += 1
-    print(f" Deletion status: succeeded:  {len(deleted_files) - fail_counter} , failures: {fail_counter} , total: + {len(deleted_files)}")
+    print(" Deletion status: succeeded: " + str(len(deleted_files) - fail_counter) + ", failures: " + str(fail_counter) + ", total: " + str(len(deleted_files)))
     print("========================================================================")
 
 if __name__ == "__main__":
