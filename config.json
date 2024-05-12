@@ -1,10 +1,10 @@
 {
-  "working_dir": "/home/admin/repos/log-cleaner",
   "archiving_interval": 7,
   "deletion_interval": 21,
-  "archives_dir": "/home/admin/repos/log-cleaner/log-archives",
+  "working_dir": "/home/admin/repos/LogCleaner",
+  "archives_dir": "/home/admin/repos/LogCleaner/log-archives",
   "log_dirs": [
-    "/home/admin/repos/log-cleaner/log-dir",
-    "/home/admin/repos/log-cleaner/new-log-dir"
+    "/home/admin/repos/LogCleaner/MDAS/logs",
+    "/home/admin/repos/LogCleaner/daemon/logs"
   ]
 }
