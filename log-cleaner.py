@@ -62,7 +62,7 @@ def get_dir_diff(dir1, dir2):
         diff = os.path.join(os.path.basename(dir1), d2[1:])
     return diff
 
-def log_archiving(current_dir, parent_dir=None, subdir=False):
+def log_archiving(configs, current_dir, parent_dir=None, subdir=False):
     # Define archiving interval and archiving directory
     print('   --- Fetching archive info ...')
     archiving_interval = configs['archiving_interval']
@@ -114,7 +114,7 @@ def log_archiving(current_dir, parent_dir=None, subdir=False):
     print(colors.BOLD + '   --- Archiving status: ' + colors.END + 'succeeded: ' + str(success_count) + ', failed: ' + str(fail_count) + ', total: ' + str(total_count))
     print('   ======================================================================================================\n')
 
-def log_deletion(current_dir, parent_dir=None, subdir=False):
+def log_deletion(configs, current_dir, parent_dir=None, subdir=False):
     # Define deletion interval and archiving directory
     print('   --- Fetching archive info ...')
     deletion_interval = configs['deletion_interval']
@@ -167,40 +167,43 @@ if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(current_dir, config_file)
     configs = load_configs(config_path)
+    temp_dir = configs['archives_dir']
     
     print(colors.YELLOW + ' - Running archiving process ...\n' + colors.END)
     time.sleep(1)
-
+    
     for log_dir in configs['log_dirs']:
+        configs['archives_dir'] = os.path.join(temp_dir, os.path.basename(os.path.dirname(log_dir)))
         if not os.path.exists(log_dir):
             print(colors.RED + '   --- Error: log directory does not exist: ' + log_dir + colors.END)
             continue
         log_subdirs = get_subdirs(log_dir)
         print(colors.MAGENTA + '   --- Current log directroy: ' + colors.END + log_dir + ' | ' + str(len(log_subdirs)) + ' subdir(s) detected!')
         print('   ======================================================================================================')
-        log_archiving(log_dir)
+        log_archiving(configs, log_dir)
         count = 0
         for log_subdir in log_subdirs:
             count += 1
             print(colors.MAGENTA + '   --- [' + str(count) + '] Current log sub-directroy: ' + colors.END + log_subdir)
             print('   ======================================================================================================')
-            log_archiving(log_subdir, log_dir, True)
+            log_archiving(configs, log_subdir, log_dir, True)
     
     print(colors.YELLOW + ' - Running deletion process ...\n' + colors.END)
     time.sleep(1)
     
-    archive_dirs = [os.path.join(configs['archives_dir'], archive_dir) for archive_dir in os.listdir(configs['archives_dir'])]
+    archive_dirs = [os.path.join(temp_dir, archive_dir) for archive_dir in os.listdir(temp_dir)]
     for archive_dir in archive_dirs :
+        configs['archives_dir'] = os.path.join(temp_dir, os.path.basename(os.path.dirname(archive_dir)))
         archive_subdirs = get_subdirs(archive_dir)
         print(colors.MAGENTA + '   --- Current archive directroy: ' + colors.END + archive_dir + ' | ' + str(len(archive_subdirs)) + ' subdir(s) detected!')
         print('   ======================================================================================================')
-        log_deletion(archive_dir)
+        log_deletion(configs, archive_dir)
         count = 0
         for archive_subdir in archive_subdirs:
             count += 1
             print(colors.MAGENTA + '   --- [' + str(count) + '] Current archive sub-directroy: ' + colors.END + archive_subdir)
             print('   ======================================================================================================')
-            log_deletion(archive_subdir, archive_dir, True)
+            log_deletion(configs, archive_subdir, archive_dir, True)
 
     # Record the end time
     end_time = time.time()
