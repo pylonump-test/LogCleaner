@@ -1,108 +1,214 @@
-import os, json, time, zipfile
+import os, shutil, json, time, zipfile
+from collections import defaultdict
+from difflib import SequenceMatcher
 from datetime import datetime
 
-def prepare_files(log_dir, archive_dir):
-    # Get all archived files for current log directory
-    archived_files = []
-    files_date = []
+# ANSI color codes
+class colors:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
 
-    # Traverse all directories and subdirectories recursively
-    for root, dirs, files in os.walk(log_dir):
-        for file_name in files:
-            file_path = os.path.join(root, file_name)
-            file_time = round(os.stat(file_path).st_mtime)
-            # If file is past archiving window
-            if file_time < (current_time - archiving_window):
-                file_date = datetime.fromtimestamp(file_time).strftime('%d%m%Y')
-                if file_date not in files_date:
-                    files_date.append(file_date)
-                archived_files.append(file_path)
+def load_configs(config_path):
+    print(colors.YELLOW + ' - Checking config file ' + config_path + ' ...' + colors.END)
+    time.sleep(1)
+    if not os.path.exists(config_path):
+        print(colors.RED + '   --- Error: No such file or directory\n' + colors.END)
+        exit()
+    else:
+        with open(config_path, 'r') as file:
+            try:
+                configs = json.load(file)
+            except ValueError as err:
+                print(colors.RED + '   --- Error: Invalid JSON: ' + colors.END + str(err) + '\n')
+                exit()
+            else:
+                print(colors.GREEN + '   --- Success: Configs loaded' + colors.END)
+                print('   --- Config: archiving_interval is set to: ' + str(configs['archiving_interval']) + ' day(s)')
+                print('   --- Config: deletion_interval is set to: ' + str(configs['deletion_interval']) + ' day(s)')
+                print('   --- Config: archives_dir is set to: ' + str(configs['archives_dir']))
+                print('   --- Config: log_dirs targeted ...')
+                for log_dir in configs['log_dirs']:
+                    print('               - log_dir: ' + str(log_dir))
+                print('')
+                return configs
 
-    # Get all deleted archives for current log directory
-    deleted_files = []
-    for archive_file in os.listdir(archive_dir):
-        archive_path = os.path.join(archive_dir, archive_file)
-        if os.path.isfile(archive_path):
-            archive_time = round(os.stat(archive_path).st_mtime)
-            # If archive is past deletion window
-            if archive_time < (current_time - deletion_window):
-                deleted_files.append(archive_path)
+def get_subdirs(parent_dir):
+    subdirs = []
+    for root, dirs, files in os.walk(parent_dir):
+        for dir_name in dirs:
+            subdir_path = os.path.join(root, dir_name)
+            rel_path = os.path.relpath(subdir_path, parent_dir)
+            subdirs.append(subdir_path)
+    return subdirs
 
-    data = {
-        "files_date": files_date,
-        "archived_files": archived_files,
-        "deleted_files": deleted_files
-    }
-    return data
+def get_dir_diff(dir1, dir2):
+    # Initialize SequenceMatcher with the two directories
+    matcher = SequenceMatcher(None, dir1, dir2)
+    # Get the differences between the two directories
+    diffs = list(matcher.get_opcodes())
+    # Extract the differing parts
+    diff_parts = []
+    for tag, i1, i2, j1, j2 in diffs:
+        if tag != 'equal':
+            diff_parts.append((tag, dir1[i1:i2], dir2[j1:j2]))
+    # Get the 2nd directory path difference
+    for tag, d1, d2 in diff_parts:
+        diff = os.path.join(os.path.basename(dir1), d2[1:])
+    return diff
 
-def archive_files(archived_files, log_dir, archive_dir):
-    print(" Found " + str(len(archived_files)) + " log file(s) ready for archiving")
-    print(" ------------------------------------------------------------------------")
-    fail_counter = 0
+def log_archiving(current_dir, parent_dir=None, subdir=False):
+    # Define archiving interval and archiving directory
+    print('   --- Fetching archive info ...')
+    archiving_interval = configs['archiving_interval']
+    archives_dir = configs['archives_dir']
+    if subdir:
+        dir_diff = get_dir_diff(parent_dir, current_dir)
+        archives_dir = os.path.join(archives_dir, os.path.dirname(dir_diff))
+    # Dictionary to store logs grouped by their modification date
+    log_files = defaultdict(list)
+    # Create the corresponding directory in the archives directory
+    archive_dir = os.path.join(archives_dir, os.path.basename(current_dir))
+    if not os.path.exists(archive_dir):
+        os.makedirs(archive_dir)
+    # Filter logs by archiving interval
+    total_count = 0
+    for file_name in os.listdir(current_dir):
+        file_path = os.path.join(current_dir, file_name)
+        if os.path.isfile(file_path):
+            # Get the log's modification time in seconds since the epoch
+            file_mtime = os.path.getmtime(file_path)
+            # Calculate the age of the logs in days
+            age_in_days = (time.time() - file_mtime) / (24 * 3600)
+            if age_in_days > archiving_interval:
+                # Get the modification date of the logs (DD-MM-YYYY format)
+                modification_date = time.strftime("%d-%m-%Y", time.localtime(file_mtime))
+                log_files[(current_dir, modification_date)].append(file_path)
+                total_count += 1
+    # Archive logs
+    fail_count = 0
+    success_count = 0
+    print('   --- Logs detected: ' + str(total_count) + ' log(s)')
+    for (current_dir, modification_date), files in log_files.items():
+        zip_file_path = os.path.join(archives_dir, os.path.basename(current_dir), modification_date + ".zip")
+        with zipfile.ZipFile(zip_file_path, "a", zipfile.ZIP_DEFLATED) as zipf:
+            for file_path in files:
+                rel_path = os.path.join(modification_date, os.path.basename(file_path))
+                try:
+                    print('   --- Archiving log: ' + file_path)
+                    zipf.write(file_path, rel_path)
+                except (IOError, zipfile.BadZipfile) as err:
+                    fail_count += 1
+                    print(colors.RED + '   --- Error: Failed to write zip file: ' + colors.END + str(err))
+                else:
+                    os.remove(file_path)
+                    success_count += 1
+                    print(colors.GREEN + '   --- Success: Log archived: ' + colors.END + zip_file_path)
 
-    for file_path in archived_files:
+    print('   ======================================================================================================')
+    print(colors.BOLD + '   --- Archiving status: ' + colors.END + 'succeeded: ' + str(success_count) + ', failed: ' + str(fail_count) + ', total: ' + str(total_count))
+    print('   ======================================================================================================\n')
+
+def log_deletion(current_dir, parent_dir=None, subdir=False):
+    # Define deletion interval and archiving directory
+    print('   --- Fetching archive info ...')
+    deletion_interval = configs['deletion_interval']
+    archives_dir = configs['archives_dir']
+    if subdir:
+        dir_diff = get_dir_diff(parent_dir, current_dir)
+        archives_dir = os.path.join(archives_dir, os.path.dirname(dir_diff))
+    # List to store archives
+    archives = []
+    # Filter archives by deletion interval
+    total_count = 0
+    for file_name in os.listdir(current_dir):
+        file_path = os.path.join(current_dir, file_name)
+        if os.path.isfile(file_path):
+            # Get the archive's modification time in seconds since the epoch
+            file_mtime = os.path.getmtime(file_path)
+            # Calculate the age of the archive in days
+            age_in_days = (time.time() - file_mtime) / (24 * 3600)
+            if age_in_days > deletion_interval:
+                # Get the modification date of the archive (DD-MM-YYYY format)
+                archives.append(file_path)
+                total_count += 1
+    # Delete archives
+    fail_count = 0
+    success_count = 0
+    print('   --- Archives detected: ' + str(total_count) + ' archives(s)')
+    for archive in archives:
         try:
-            # Get the relative path of the file based on the log directory
-            relative_path = os.path.relpath(file_path, log_dir)
-            # Create the directory structure within the archive directory
-            archive_subdir = os.path.join(archive_dir, os.path.dirname(relative_path))
-            os.makedirs(archive_subdir, exist_ok=True)
+            print('   --- Deleting archive: ' + file_path)
+            os.remove(archive)
+        except OSError as err:
+            fail_count += 1
+            print(colors.RED + '   --- Error: Failed to delete archive: ' + colors.END + str(err))
+        else:
+            success_count += 1
+            print(colors.GREEN + '   --- Success: archive deleted: ' + colors.END)
 
-            # Format the zip file name with the date
-            file_date = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%d%m%Y')
-            zip_file_path = os.path.join(archive_subdir, file_date + ".zip")
-
-            # Write the file to the zip, preserving the directory structure
-            with zipfile.ZipFile(zip_file_path, 'a', zipfile.ZIP_DEFLATED) as archive:
-                archive.write(file_path, relative_path)
-                os.remove(file_path)
-        except Exception as e:
-            print("Error archiving file " + file_path + ":" + e)
-            fail_counter += 1
-
-    print(" Archiving status: succeeded: " + str(len(archived_files) - fail_counter) + ", failures: " + str(fail_counter) + ", total: " + str(len(archived_files)));
-    print("========================================================================")
-
-def delete_files(deleted_files):
-    print(" Found " + str(len(deleted_files)) + "archive(s) ready for deletion")
-    print(" ------------------------------------------------------------------------")
-    fail_counter = 0
-    for deleted_file in deleted_files:
-        try:
-            os.remove(deleted_file);
-        except Exception as e:
-            print("Error deleting file " + deleted_file + ":" + e)
-            fail_counter += 1
-    print(" Deletion status: succeeded: " + str(len(deleted_files) - fail_counter) + ", failures: " + str(fail_counter) + ", total: " + str(len(deleted_files)))
-    print("========================================================================")
+    print('   ======================================================================================================')
+    print(colors.BOLD + '   --- Deletion status: ' + colors.END + 'succeeded: ' + str(success_count) + ', failed: ' + str(fail_count) + ', total: ' + str(total_count))
+    print('   ======================================================================================================\n')
 
 if __name__ == "__main__":
+    # Record the start time
+    start_time = time.time()
 
-    with open('config.json', 'r') as config_file:
-        config_params = json.load(config_file)
+    print(colors.BOLD + '\n LogCleaner\n' + colors.END)
+    print(colors.CYAN + ' - Execution started at: ' + colors.END + time.strftime("%A, %B %d, %Y %I:%M:%S %p", time.localtime(time.time())) + '\n')
+    
+    config_file= 'config.json'
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(current_dir, config_file)
+    configs = load_configs(config_path)
+    
+    print(colors.YELLOW + ' - Running archiving process ...\n' + colors.END)
+    time.sleep(1)
 
-    current_time = time.time()
-    archiving_window = config_params['archiving_interval'] * 86400  # 7 Days
-    deletion_window = config_params['deletion_interval'] * 86400  # 21 Days
-    archives_dir = config_params['archives_dir']
+    for log_dir in configs['log_dirs']:
+        if not os.path.exists(log_dir):
+            print(colors.RED + '   --- Error: log directory does not exist: ' + log_dir + colors.END)
+            continue
+        log_subdirs = get_subdirs(log_dir)
+        print(colors.MAGENTA + '   --- Current log directroy: ' + colors.END + log_dir + ' | ' + str(len(log_subdirs)) + ' subdir(s) detected!')
+        print('   ======================================================================================================')
+        log_archiving(log_dir)
+        count = 0
+        for log_subdir in log_subdirs:
+            count += 1
+            print(colors.MAGENTA + '   --- [' + str(count) + '] Current log sub-directroy: ' + colors.END + log_subdir)
+            print('   ======================================================================================================')
+            log_archiving(log_subdir, log_dir, True)
+    
+    print(colors.YELLOW + ' - Running deletion process ...\n' + colors.END)
+    time.sleep(1)
+    
+    archive_dirs = [os.path.join(configs['archives_dir'], archive_dir) for archive_dir in os.listdir(configs['archives_dir'])]
+    for archive_dir in archive_dirs :
+        archive_subdirs = get_subdirs(archive_dir)
+        print(colors.MAGENTA + '   --- Current archive directroy: ' + colors.END + archive_dir + ' | ' + str(len(archive_subdirs)) + ' subdir(s) detected!')
+        print('   ======================================================================================================')
+        log_deletion(archive_dir)
+        count = 0
+        for archive_subdir in archive_subdirs:
+            count += 1
+            print(colors.MAGENTA + '   --- [' + str(count) + '] Current archive sub-directroy: ' + colors.END + archive_subdir)
+            print('   ======================================================================================================')
+            log_deletion(archive_subdir, archive_dir, True)
 
-    print("\nlog-cleaner running ...")
-    for log_dir in config_params['log_dirs']:
-        print("\nCurrent working directory: " + str(log_dir))
-        archive_dir = os.path.join(archives_dir, os.path.basename(log_dir))
-        if not os.path.exists(archive_dir):
-            os.makedirs(archive_dir)  # Ensure archive directory exists
-        # Prepare files data
-        data = prepare_files(log_dir, archive_dir)
-        # Archiving Process
-        if data["archived_files"]:
-            print("\nStarting archiving process ...")
-            archive_files(data["archived_files"], log_dir, archive_dir)
-        else:
-            print("\n-- No log files were found for archiving process!")
-        # Deletion Process
-        if data["deleted_files"]:
-            print("\nStarting deletion process ...")
-            delete_files(data["deleted_files"])
-        else:
-            print("\n-- No expired archives were found for deletion process!")
+    # Record the end time
+    end_time = time.time()
+
+    # Calculate the elapsed time
+    elapsed_time = end_time - start_time
+    # Convert elapsed time to a human-readable format
+    elapsed_time_str = '{:.2f} seconds'.format(elapsed_time)
+    
+    # Display the elapsed time
+    print(colors.CYAN + ' - LogClenaer execution time: ' + colors.END + colors.BOLD + elapsed_time_str + colors.END + '\n')
