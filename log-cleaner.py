@@ -85,21 +85,26 @@ def log_archiving(configs, current_dir, parent_dir=None, subdir=False):
     archive_dir = os.path.join(archives_dir, os.path.basename(current_dir))
     if not os.path.exists(archive_dir):
         os.makedirs(archive_dir)
+    
+    # Get log file types
+    file_types = configs['file_types']
 
     # Filter logs by archiving interval
     total_count = 0
     for file_name in os.listdir(current_dir):
         file_path = os.path.join(current_dir, file_name)
         if os.path.isfile(file_path):
-            # Get the log's modification time in seconds since the epoch
-            file_mtime = os.path.getmtime(file_path)
-            # Calculate the age of the logs in days
-            age_in_days = (time.time() - file_mtime) / (24 * 3600)
-            if age_in_days > archiving_interval:
-                # Get the modification date of the logs (DD-MM-YYYY format)
-                modification_date = time.strftime("%d-%m-%Y", time.localtime(file_mtime))
-                log_files[(current_dir, modification_date)].append(file_path)
-                total_count += 1
+            for file_type in file_types:
+                if file_type in file_path:
+                    # Get the log's modification time in seconds since the epoch
+                    file_mtime = os.path.getmtime(file_path)
+                    # Calculate the age of the logs in days
+                    age_in_days = (time.time() - file_mtime) / (24 * 3600)
+                    if age_in_days > archiving_interval:
+                        # Get the modification date of the logs (DD-MM-YYYY format)
+                        modification_date = time.strftime("%d-%m-%Y", time.localtime(file_mtime))
+                        log_files[(current_dir, modification_date)].append(file_path)
+                        total_count += 1
 
     # Archive logs
     fail_count = 0

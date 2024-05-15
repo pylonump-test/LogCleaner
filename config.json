@@ -1,11 +1,15 @@
 {
   "archiving_interval": 7,
   "deletion_interval": 21,
-  "working_dir": "/home/admin/LogCleaner",
-  "report_dir": "/home/admin/LogCleaner/reports",
-  "archives_dir": "/home/admin/LogCleaner/log-archives",
+  "working_dir": "/home/admin/repos/LogCleaner",
+  "report_dir": "/home/admin/repos/LogCleaner/reports",
+  "archives_dir": "/home/admin/repos/LogCleaner/log-archives",
   "log_dirs": [
-    "/home/admin/LogCleaner/MDAS/logs",
-    "/home/admin/LogCleaner/daemon/logs"
+    "/home/admin/repos/LogCleaner/MDAS/logs",
+    "/home/admin/repos/LogCleaner/daemon/logs"
+  ],
+  "file_types": [
+    "applog",
+    "errorlog"
   ]
 }
