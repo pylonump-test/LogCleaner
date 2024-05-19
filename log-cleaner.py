@@ -68,7 +68,7 @@ def log_archiving(configs, current_dir, parent_dir=None, subdir=False):
     start_time = time.time()
 
     # Record disk usage before archiving
-    disk_usage_before = subprocess.check_output("du -sh", shell=True).decode().split()[0]
+    disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
 
     # Define archiving interval and archiving directory
     print('   --- Fetching archive info ...')
@@ -138,7 +138,7 @@ def log_archiving(configs, current_dir, parent_dir=None, subdir=False):
     end_time = time.time()
     
     # Record disk usage after archiving
-    disk_usage_after = subprocess.check_output("du -sh", shell=True).decode().split()[0]
+    disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     
     # Calculate elapsed time
     elapsed_time = calculate_elapsed_time(start_time, end_time)
@@ -164,8 +164,8 @@ def log_deletion(configs, current_dir, parent_dir=None, subdir=False):
     # Record the start time
     start_time = time.time()
     
-    # Record disk usage before archiving
-    disk_usage_before = subprocess.check_output("du -sh", shell=True).decode().split()[0]
+    # Record disk usage before deletion
+    disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     
     # Define deletion interval and archiving directory
     print('   --- Fetching archive info ...')
@@ -215,8 +215,8 @@ def log_deletion(configs, current_dir, parent_dir=None, subdir=False):
     # Record the end time
     end_time = time.time()
     
-    # Record disk usage after archiving
-    disk_usage_after = subprocess.check_output("du -sh", shell=True).decode().split()[0]
+    # Record disk usage after deletion
+    disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     
     # Calculate elapsed time
     elapsed_time = calculate_elapsed_time(start_time, end_time)
@@ -268,11 +268,7 @@ if __name__ == "__main__":
 
     # Record the start time
     start_time = time.time()
-    report['start_time'] = time.strftime("%A, %B %d, %Y %I:%M:%S %p", time.localtime(start_time))
-
-    # Record disk usage before LogCleaner
-    disk_usage_before = subprocess.check_output("du -sh", shell=True).decode().split()[0]
-    report['disk_usage_before'] = disk_usage_before
+    report['start_time'] = time.strftime("%A, %B %d, %Y %I:%M:%S %p", time.localtime(start_time)) 
 
     # >---BEGIN--->>>
 
@@ -284,6 +280,10 @@ if __name__ == "__main__":
     config_path = os.path.join(current_dir, config_file)
     configs = load_configs(config_path)
     temp_dir = configs['archives_dir']
+
+    # Record disk usage before LogCleaner
+    disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
+    report['disk_usage_before'] = disk_usage_before
 
     report['archiving_interval'] = configs['archiving_interval']
     report['deletion_interval'] = configs['deletion_interval']
@@ -353,8 +353,8 @@ if __name__ == "__main__":
     end_time = time.time()
     report['end_time'] = time.strftime("%A, %B %d, %Y %I:%M:%S %p", time.localtime(end_time))
 
-    # Record disk usage after running the script
-    disk_usage_after = subprocess.check_output("du -sh", shell=True).decode().split()[0]
+    # Record disk usage after LogCLeaner
+    disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     report['disk_usage_after'] = disk_usage_after
     
     # Calculate the elapsed time

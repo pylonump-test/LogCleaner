@@ -1,6 +1,7 @@
 {
   "archiving_interval": 7,
   "deletion_interval": 21,
+  "disk_storage_path": "/home/admin",
   "working_dir": "/home/admin/repos/LogCleaner",
   "report_dir": "/home/admin/repos/LogCleaner/reports",
   "archives_dir": "/home/admin/repos/LogCleaner/log-archives",
