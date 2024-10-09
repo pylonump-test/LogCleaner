@@ -131,7 +131,7 @@ LogCleaner uses a `config.json` file to manage settings for log directories, fil
 | `log_dirs`           | A list of directories containing the log files to be managed.   |
 | `file_types`         | A list of allowed file-name extensions for log files (e.g., `.txt`). |
 
-## 5. Scheduling with Crontab
+## 7. Scheduling with Crontab
 
 To run LogCleaner automatically, you can set up a cron job. For example, to schedule LogCleaner to run daily at 3:00 AM, follow these steps:
 
