@@ -4,16 +4,16 @@
 
 # Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Features](#features)
-3. [Dependencies](#dependencies)
-4. [Installation](#installation)
-5. [Usage](#usage)
-   - 5.1. [Archiving Process](#archiving-process)
-   - 5.2. [Deletion Process](#deletion-process)
-   - 5.3. [Logging Process](#logging-process)
-6. [JSON Configuration](#json-configuration)
-7. [Scheduling with Crontab](#scheduling-with-crontab)
+1. [Project Overview](#1-project-overview)
+2. [Features](#2-features)
+3. [Dependencies](#3-dependencies)
+4. [Installation](#4-installation)
+5. [Usage](#5-usage)
+   - 5.1. [Archiving Process](#51-archiving-process)
+   - 5.2. [Deletion Process](#52-deletion-process)
+   - 5.3. [Logging Process](#53-logging-process)
+6. [JSON Configuration](#6-json-configuration)
+7. [Scheduling with Crontab](#7-scheduling-with-crontab)
 
 ## 1. Project Overview
 **Project Name**: LogCleaner  
