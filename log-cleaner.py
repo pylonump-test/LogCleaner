@@ -1,7 +1,15 @@
+from __future__ import print_function
 import os, shutil, json, time, zipfile, subprocess
 from collections import defaultdict
 from difflib import SequenceMatcher
 from datetime import datetime
+
+
+try:
+    import colorama
+    colorama.init()
+except ImportError:
+    colorama = None
 
 # ANSI color codes
 class colors:
@@ -62,13 +70,28 @@ def get_dir_diff(dir1, dir2):
         diff = os.path.join(os.path.basename(dir1), d2[1:])
     return diff
 
+def get_disk_usage(path):
+    try:
+        # Python 3.3+
+        import shutil
+        total, used, free = shutil.disk_usage(path)
+        return "{:.2f}G".format(used / (1024.0 ** 3))
+    except:
+        # Fallback for Python 2 (Linux only)
+        try:
+            output = subprocess.check_output("du -sh {}".format(path), shell=True)
+            return output.split()[0]
+        except Exception as e:
+            return "N/A"
+
 def log_archiving(configs, current_dir, parent_dir=None, subdir=False):
 
     # Record the start time
     start_time = time.time()
 
     # Record disk usage before archiving
-    disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
+    disk_usage_before = get_disk_usage(configs['disk_storage_path'])
+    #disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
 
     # Define archiving interval and archiving directory
     print('   --- Fetching archive info ...')
@@ -138,7 +161,8 @@ def log_archiving(configs, current_dir, parent_dir=None, subdir=False):
     end_time = time.time()
     
     # Record disk usage after archiving
-    disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
+    disk_usage_after = get_disk_usage(configs['disk_storage_path'])
+    #disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     
     # Calculate elapsed time
     elapsed_time = calculate_elapsed_time(start_time, end_time)
@@ -165,7 +189,8 @@ def log_deletion(configs, current_dir, parent_dir=None, subdir=False):
     start_time = time.time()
     
     # Record disk usage before deletion
-    disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
+    disk_usage_before = get_disk_usage(configs['disk_storage_path'])
+    #disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     
     # Define deletion interval and archiving directory
     print('   --- Fetching archive info ...')
@@ -216,7 +241,8 @@ def log_deletion(configs, current_dir, parent_dir=None, subdir=False):
     end_time = time.time()
     
     # Record disk usage after deletion
-    disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
+    disk_usage_after = get_disk_usage(configs['disk_storage_path'])
+    #disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     
     # Calculate elapsed time
     elapsed_time = calculate_elapsed_time(start_time, end_time)
@@ -244,10 +270,24 @@ def calculate_elapsed_time(start_time, end_time):
     return elapsed_time
 
 def calculate_disk_usage(disk_usage_before, disk_usage_after):
-    disk_usage_diff = float(disk_usage_before[:-1]) - float(disk_usage_after[:-1])
-    disk_usage_unit = disk_usage_after[-1]
-    disk_usage = str(disk_usage_diff) + str(disk_usage_unit)
-    return disk_usage
+    try:
+        # Strip units and convert both to float (assumes same units)
+        val_before = float(''.join(c for c in disk_usage_before if c.isdigit() or c == '.'))
+        val_after = float(''.join(c for c in disk_usage_after if c.isdigit() or c == '.'))
+        
+        # Extract unit (assumes last char is unit)
+        unit = ''.join(c for c in disk_usage_after if c.isalpha()) or 'B'
+        
+        diff = val_before - val_after
+        return "{:.2f}{}".format(diff, unit)
+    except Exception:
+        return "N/A"
+
+#def calculate_disk_usage(disk_usage_before, disk_usage_after):
+#    disk_usage_diff = float(disk_usage_before[:-1]) - float(disk_usage_after[:-1])
+#    disk_usage_unit = disk_usage_after[-1]
+#    disk_usage = str(disk_usage_diff) + str(disk_usage_unit)
+#    return disk_usage
 
 def calculate_status(status):
     total = 0
@@ -282,7 +322,8 @@ if __name__ == "__main__":
     temp_dir = configs['archives_dir']
 
     # Record disk usage before LogCleaner
-    disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
+    disk_usage_before = get_disk_usage(configs['disk_storage_path'])
+    #disk_usage_before = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     report['disk_usage_before'] = disk_usage_before
 
     report['archiving_interval'] = configs['archiving_interval']
@@ -354,7 +395,8 @@ if __name__ == "__main__":
     report['end_time'] = time.strftime("%A, %B %d, %Y %I:%M:%S %p", time.localtime(end_time))
 
     # Record disk usage after LogCLeaner
-    disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
+    disk_usage_after = get_disk_usage(configs['disk_storage_path'])
+    #disk_usage_after = subprocess.check_output("du -sh {}".format(configs['disk_storage_path']), shell=True).decode().split()[0]
     report['disk_usage_after'] = disk_usage_after
     
     # Calculate the elapsed time
