@@ -1,13 +1,12 @@
 {
-  "archiving_interval": 7,
-  "deletion_interval": 21,
-  "disk_storage_path": "/home/admin",
-  "working_dir": "/home/admin/repos/LogCleaner",
-  "report_dir": "/home/admin/repos/LogCleaner/reports",
-  "archives_dir": "/home/admin/repos/LogCleaner/log-archives",
+  "archiving_interval": 3,
+  "deletion_interval": 7,
+  "disk_storage_path": "/home/admin/Workspace/",
+  "working_dir": "/home/admin/Workspace/LogCleaner",
+  "report_dir": "/home/admin/Workspace/LogCleaner/reports",
+  "archives_dir": "/home/admin/Workspace/logs_archive",
   "log_dirs": [
-    "/home/admin/repos/LogCleaner/MDAS/logs",
-    "/home/admin/repos/LogCleaner/daemon/logs"
+    "/home/admin/Workspace/Logs"
   ],
   "file_types": [
     "applog",
